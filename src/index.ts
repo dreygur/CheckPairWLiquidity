@@ -20,15 +20,32 @@ async function main() {
   console.log(`[+] Waiting for new Pair creation...\n`);
   pairCreatedEvent.on('data', async (data: any) => {
     const { pair, token0, token1 } = data.returnValues;
-    console.log(`=> New PAIR created: ${pair}`);
-    const pairContract = new web3.eth.Contract(IUniswapV2Pair.abi, pair);
-    const reserves: string[] = await pairContract.methods.getReserves().call();
+    console.log(`=> New PAIR created: ${pair}\n=> Checking Liquidity...`);
 
-    const index: number = token1 === WETH ? 0 : 1;
-    const balance = parseFloat(web3.utils.fromWei(reserves[index], 'ether'));
-    console.log(`=> Token address: ${index === 1 ? token1 : token0}, Liquidity amount: ${balance}`);
+    try {
+      const pairContract = new web3.eth.Contract(IUniswapV2Pair.abi, pair);
+      const reserves: string[] = await pairContract.methods.getReserves().call();
+
+      const index: number = token1 === WETH ? 0 : 1;
+      const balance = parseFloat(web3.utils.fromWei(reserves[index], 'ether'));
+      console.log(`=> Token address: ${index === 1 ? token1 : token0}, Liquidity amount: ${balance}\n`);
+    } catch (err: any) { console.log(`\n[-] ${err.message}`) }
   })
 }
+
+process.on('SIGINT', (signal) => {
+  console.log(`[+] Received signal: ${signal} Exiting...`);
+  process.exit(0);
+});
+
+process.on('SIGHUP', (signal) => {
+  console.log(`[+] Received signal: ${signal} Exiting...`);
+  process.exit(0);
+});
+
+process.on('exit', (STATUS_CODE) => {
+  console.log('[+] Stoping the bot...');
+});
 
 // EntryPoint
 (async () => await main())();
